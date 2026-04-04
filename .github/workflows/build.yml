@@ -1,4 +1,4 @@
-name: Build cargo
+name: Build rustc
 
 on:
   workflow_dispatch:
