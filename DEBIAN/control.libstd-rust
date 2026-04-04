@@ -1,0 +1,7 @@
+Package: libstd-rust-*VER*
+Version: *VER*
+Architecture: armel
+Maintainer: rara64
+Depends: libc6 (>= 2.39), libgcc-s1 (>= 4.3), libllvm19 (>= 1:19.1.0), libstdc++6(>= 13.1)
+Conflicts: rustup
+Description: Rust standard libraries for armv5te.
