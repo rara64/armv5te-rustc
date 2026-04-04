@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "remove" ]; then
+    rm -f /etc/ld.so.conf.d/rust.conf
+    ldconfig
+fi
+
+exit 0
