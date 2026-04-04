@@ -2,6 +2,6 @@ Package: libstd-rust-dev
 Version: *VER*
 Architecture: armel
 Maintainer: rara64
-Depends: libstd-rust-1.94.1 (= 1.94.1)
+Depends: libstd-rust-*VER* (= *VER*)
 Conflicts: rustup
 Description: Rust standard libraries - development files for armv5te.
