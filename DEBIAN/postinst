@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+    echo "/usr/lib/rustlib/armv5te-unknown-linux-gnueabi/lib" > /etc/ld.so.conf.d/rust.conf
+    ldconfig
+fi
