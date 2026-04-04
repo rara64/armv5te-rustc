@@ -24,7 +24,7 @@ jobs:
       - name: Clone rust repo
         if: ${{ env.RUST_VERSION != env.RUST_RELEASE }}
         run: |
-          git clone https://github.com/rust-lang/rust.git -b ${{ env.RUST_VERSION }}
+          git clone https://github.com/rust-lang/rust --depth 1 -b ${{ env.RUST_VERSION }}
       - name: Build rustc
         if: ${{ env.RUST_VERSION != env.RUST_RELEASE }}
         run: |
