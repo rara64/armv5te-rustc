@@ -1,0 +1,105 @@
+name: Build cargo
+
+on:
+  workflow_dispatch:
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-arm-linux-gnueabi g++-arm-linux-gnueabi ninja-build libc6-dev-armel-cross
+      - name: Check rust version
+        run: |
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/rust-lang/rust/releases/latest | jq -r .tag_name)
+          echo "RUST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+          echo "Latest version is $LATEST_VERSION"
+          RUST_RELEASE=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RUST_RELEASE=$RUST_RELEASE" >> $GITHUB_ENV
+          echo "Latest release is $RUST_RELEASE"
+      - name: Clone rust repo
+        if: ${{ env.RUST_VERSION != env.RUST_RELEASE }}
+        run: |
+          git clone https://github.com/rust-lang/rust.git -b ${{ env.RUST_VERSION }}
+      - name: Build rustc
+        if: ${{ env.RUST_VERSION != env.RUST_RELEASE }}
+        run: |
+          cd rust
+          
+          ./configure \
+          --build=x86_64-unknown-linux-gnu \
+          --host=armv5te-unknown-linux-gnueabi \
+          --target=armv5te-unknown-linux-gnueabi \
+          --set target.armv5te-unknown-linux-gnueabi.cc=arm-linux-gnueabi-gcc \
+          --set target.armv5te-unknown-linux-gnueabi.cxx=arm-linux-gnueabi-g++ \
+          --set target.armv5te-unknown-linux-gnueabi.ar=arm-linux-gnueabi-ar \
+          --set target.armv5te-unknown-linux-gnueabi.linker=arm-linux-gnueabi-gcc \
+          --disable-debug \
+          --disable-debug-assertions \
+          --disable-llvm-assertions \
+          --set llvm.optimize=true \
+          --set llvm.targets="ARM;X86" \
+          --set llvm.thin-lto=false \
+          --set llvm.release-debuginfo=false \
+          --disable-docs \
+          --set rust.optimize=true \
+          --set rust.lto=thin \
+          --set rust.codegen-units=1 \
+          --prefix=/rust/output
+
+          python3 x.py dist rustc rust-std --host armv5te-unknown-linux-gnueabi --target armv5te-unknown-linux-gnueabi
+      - name: Package artefacts
+        if: ${{ env.RUST_VERSION != env.RUST_RELEASE }}
+        run: |
+          cd rust
+          
+          mkdir -p pkg-rustc/DEBIAN pkg-rustc/usr/bin
+          mkdir -p pkg-rust-std/DEBIAN pkg-rust-std/usr/lib/rustlib/armv5te-unknown-linux-gnueabi/lib
+          mkdir -p pkg-rustc-dev/DEBIAN pkg-rustc-dev/usr/lib/rustlib/armv5te-unknown-linux-gnueabi/lib
+          
+          rm *.xz
+          for f in *.tar.gz; do tar -xzf "$f"; done
+          
+          RUSTC_DIR=$(ls -d rustc-*armv5te-unknown-linux-gnueabi | head -n 1)
+          STD_DIR=$(ls -d rust-std-*armv5te-unknown-linux-gnueabi | head -n 1)
+          DEV_DIR=$(ls -d rustc-dev-*armv5te-unknown-linux-gnueabi | head -n 1)
+          
+          cp -r $RUSTC_DIR/rustc/bin/* pkg-rustc/usr/bin/
+          cp -r $STD_DIR/rust-std-armv5te-unknown-linux-gnueabi/lib/rustlib/armv5te-unknown-linux-gnueabi pkg-rust-std/usr/lib/rustlib/
+          cp -r $DEV_DIR/rustc-dev/lib/rustlib/armv5te-unknown-linux-gnueabi pkg-rustc-dev/usr/lib/rustlib/
+
+          cp ../DEBIAN/control.rustc pkg-rustc/DEBIAN/control
+          cp ../DEBIAN/control.libstd-rust-dev pkg-rustc-dev/DEBIAN/control
+          cp ../DEBIAN/control.libstd-rust pkg-rust-std/DEBIAN/control
+
+          for file in pkg-rustc/DEBIAN/control pkg-rustc-dev/DEBIAN/control pkg-rust-std/DEBIAN/control; do
+            sed -i "s/*VER*/${{ env.RUST_VERSION }}/g" "$file"
+          done
+
+          cp ../DEBIAN/postinst pkg-rustc/DEBIAN/postinst
+          cp ../DEBIAN/postrm pkg-rustc/DEBIAN/postrm
+
+          chmod 755 pkg-rustc/DEBIAN/postinst
+          chmod 755 pkg-rustc/DEBIAN/postrm
+          
+          sudo chown -R root:root pkg-rustc
+          sudo chown -R root:root pkg-rust-std
+          sudo chown -R root:root pkg-rustc-dev
+          
+          dpkg-deb --build pkg-rustc rustc_${{ env.RUST_VERSION }}_armel.deb
+          dpkg-deb --build pkg-rustc-dev rustc-dev_${{ env.RUST_VERSION }}_armel.deb
+          dpkg-deb --build pkg-rust-std rust-std_${{ env.RUST_VERSION }}_armel.deb
+      - name: Upload packages as a new release
+        if: ${{ env.RUST_VERSION != env.RUST_RELEASE }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: "rust/*_armel.deb"
+          file_glob: true
+          tag: ${{ env.RUST_VERSION }}
+          body: rustc ${{ env.RUST_VERSION }} for armv5te (armel)
+          overwrite: true
