@@ -61,12 +61,12 @@ jobs:
           mkdir -p pkg-rust-std/DEBIAN pkg-rust-std/usr/lib/rustlib/armv5te-unknown-linux-gnueabi/lib
           mkdir -p pkg-rustc-dev/DEBIAN pkg-rustc-dev/usr/lib/rustlib/armv5te-unknown-linux-gnueabi/lib
           
-          rm *.xz
-          for f in *.tar.gz; do tar -xzf "$f"; done
+          rm -f build/dist/*.xz
+          for f in build/dist/*.tar.gz; do tar -xzf "$f"; done
           
-          RUSTC_DIR=$(ls -d rustc-*armv5te-unknown-linux-gnueabi | head -n 1)
-          STD_DIR=$(ls -d rust-std-*armv5te-unknown-linux-gnueabi | head -n 1)
-          DEV_DIR=$(ls -d rustc-dev-*armv5te-unknown-linux-gnueabi | head -n 1)
+          RUSTC_DIR=$(ls -d build/dist/rustc-*armv5te-unknown-linux-gnueabi | head -n 1)
+          STD_DIR=$(ls -d build/dist/rust-std-*armv5te-unknown-linux-gnueabi | head -n 1)
+          DEV_DIR=$(ls -d build/dist/rustc-dev-*armv5te-unknown-linux-gnueabi | head -n 1)
           
           cp -r $RUSTC_DIR/rustc/bin/* pkg-rustc/usr/bin/
           cp -r $STD_DIR/rust-std-armv5te-unknown-linux-gnueabi/lib/rustlib/armv5te-unknown-linux-gnueabi pkg-rust-std/usr/lib/rustlib/
