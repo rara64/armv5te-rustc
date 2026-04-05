@@ -51,7 +51,7 @@ jobs:
           --set rust.codegen-units=1 \
           --prefix=/rust/output
 
-          python3 x.py dist rustc rust-std --host armv5te-unknown-linux-gnueabi --target armv5te-unknown-linux-gnueabi
+          python3 x.py dist rustc rust-std rustc-dev --host armv5te-unknown-linux-gnueabi --target armv5te-unknown-linux-gnueabi
       - name: Package artefacts
         if: ${{ env.RUST_VERSION != env.RUST_RELEASE }}
         run: |
