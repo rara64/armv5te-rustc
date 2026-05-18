@@ -2,6 +2,6 @@ Package: rustc
 Version: *VER*
 Architecture: armel
 Maintainer: rara64
-Depends: libstd-rust-dev (= 1.94.1), gcc, libc6-dev, binutils (>= 2.26)
+Depends: libstd-rust-dev (= *VER*), gcc, libc6-dev, binutils (>= 2.26)
 Conflicts: rustup
 Description: Stable build of rustc for armv5te.
